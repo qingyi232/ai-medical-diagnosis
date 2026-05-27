@@ -1,0 +1,301 @@
+================================================================================
+        基于患者病例生成智慧医疗方案研究 —— 系统部署指南
+================================================================================
+
+目录：
+  一、环境要求
+  二、安装必备软件
+  三、数据库部署
+  四、后端部署
+  五、前端部署
+  六、启动系统
+  七、常见问题排查
+
+================================================================================
+一、环境要求
+================================================================================
+
+  操作系统：Windows 10/11（推荐）、macOS、Linux
+  
+  需要安装的软件：
+    1. Python 3.10 或以上版本
+    2. Node.js 18 或以上版本（自带 npm）
+    3. MySQL 8.0 或以上版本（推荐安装 MySQL Workbench 图形化工具）
+    4. 通义千问 API Key（阿里云 DashScope 平台申请）
+
+================================================================================
+二、安装必备软件
+================================================================================
+
+【2.1 安装 Python】
+
+  1. 访问 https://www.python.org/downloads/
+  2. 下载 Python 3.10+ 安装包
+  3. 安装时 ★必须勾选★ "Add Python to PATH"（添加到环境变量）
+  4. 安装完成后，打开命令提示符（Win+R 输入 cmd），输入：
+     python --version
+     如果显示 Python 3.x.x 则安装成功
+
+【2.2 安装 Node.js】
+
+  1. 访问 https://nodejs.org/zh-cn/
+  2. 下载 LTS（长期支持）版本安装包
+  3. 双击安装，一路 Next 即可
+  4. 安装完成后，打开命令提示符，输入：
+     node --version
+     npm --version
+     如果都显示版本号则安装成功
+
+【2.3 安装 MySQL】
+
+  1. 访问 https://dev.mysql.com/downloads/mysql/
+  2. 下载 MySQL Community Server 安装包
+  3. 安装时设置 root 用户密码（请记住此密码，后续需要用到）
+  4. 安装完成后，打开命令提示符，输入：
+     mysql -u root -p
+     输入密码后如果进入 mysql> 提示符则安装成功
+     输入 exit 退出
+
+  推荐同时安装 MySQL Workbench（图形化管理工具）：
+  https://dev.mysql.com/downloads/workbench/
+
+【2.4 获取通义千问 API Key】
+
+  1. 访问阿里云百炼平台：https://bailian.console.aliyun.com/
+  2. 注册/登录阿里云账号
+  3. 开通 DashScope 灵积模型服务（免费额度足够测试使用）
+  4. 进入 API Key 管理页面：https://bailian.console.aliyun.com/#/api-key
+  5. 点击"创建 API Key"
+  6. 复制生成的 API Key（以 sk- 开头的字符串），后续需要用到
+
+================================================================================
+三、数据库部署
+================================================================================
+
+【3.1 创建数据库】
+
+  打开命令提示符（或 MySQL Workbench），执行以下命令：
+
+  mysql -u root -p
+
+  输入密码后，在 mysql> 提示符下执行：
+
+  CREATE DATABASE smart_medical DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+  然后输入 exit 退出。
+
+【3.2 导入数据库文件（如果有提供 .sql 文件）】
+
+  如果项目中有 backend/smart_medical.sql 文件，可以直接导入：
+
+  方法一：命令行导入
+    mysql -u root -p smart_medical < backend/smart_medical.sql
+
+  方法二：MySQL Workbench 导入
+    1. 打开 MySQL Workbench
+    2. 连接到本地 MySQL 服务器
+    3. 菜单栏选择 Server → Data Import
+    4. 选择 "Import from Self-Contained File"
+    5. 浏览选择 backend/smart_medical.sql 文件
+    6. 目标 Schema 选择 smart_medical
+    7. 点击 "Start Import"
+
+  注意：如果没有 .sql 文件，跳过此步骤，后面启动后端时会自动创建表结构。
+
+================================================================================
+四、后端部署
+================================================================================
+
+【4.1 进入后端目录】
+
+  打开命令提示符，进入项目的 backend 目录：
+  
+  cd 项目路径\backend
+
+  例如：cd F:\基于患者病例生成智慧医疗方案研究\backend
+
+【4.2 创建 Python 虚拟环境】
+
+  python -m venv venv
+
+【4.3 激活虚拟环境】
+
+  Windows 系统：
+    .\venv\Scripts\activate
+
+  macOS/Linux 系统：
+    source venv/bin/activate
+
+  激活成功后，命令提示符前面会出现 (venv) 字样。
+
+【4.4 安装 Python 依赖包】
+
+  pip install -r requirements.txt
+
+  如果下载速度慢，可以使用国内镜像源：
+  pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+
+  安装过程可能需要几分钟，请耐心等待。
+
+【4.5 配置环境变量】
+
+  在 backend 目录下，找到 .env.example 文件，将其复制为 .env 文件：
+
+  Windows：
+    copy .env.example .env
+
+  macOS/Linux：
+    cp .env.example .env
+
+  然后用记事本或任意文本编辑器打开 .env 文件，修改以下内容：
+
+  ------- .env 文件内容 -------
+
+  # Flask配置
+  SECRET_KEY=your-secret-key-change-this
+  JWT_SECRET_KEY=your-jwt-secret-key
+
+  # 数据库配置（★必须修改★）
+  DB_HOST=localhost
+  DB_PORT=3306
+  DB_USER=root
+  DB_PASSWORD=你的MySQL密码        ← 改成你安装MySQL时设置的密码
+  DB_NAME=smart_medical
+
+  # 通义千问API配置（★必须修改★）
+  DASHSCOPE_API_KEY=你的API Key    ← 改成你从阿里云获取的API Key
+
+  ------- 文件内容结束 -------
+
+【4.6 初始化数据库（如果没有导入 .sql 文件）】
+
+  确保虚拟环境已激活，执行：
+
+  python init_db.py
+
+  这会自动创建数据库表并插入默认数据，包括：
+  - 管理员账号：admin / admin123
+  - 医生账号：doctor / doctor123
+  - 3个示例患者、2条病历、3篇知识库文档
+
+【4.7 启动后端服务】
+
+  python run.py
+
+  看到以下输出表示启动成功：
+   * Running on http://127.0.0.1:5000
+  
+  ★★★ 注意：此命令窗口不要关闭！关闭后后端服务会停止。★★★
+
+================================================================================
+五、前端部署
+================================================================================
+
+【5.1 打开新的命令提示符窗口】
+
+  ★重要：不要关闭后端的命令窗口，另外打开一个新的命令提示符窗口★
+
+  进入项目的 frontend 目录：
+  cd 项目路径\frontend
+
+【5.2 安装前端依赖包】
+
+  npm install
+
+  如果下载速度慢，可以使用国内镜像源：
+  npm install --registry https://registry.npmmirror.com
+
+  安装过程可能需要几分钟，请耐心等待。
+
+【5.3 启动前端开发服务器】
+
+  npx vite
+
+  看到以下输出表示启动成功：
+    VITE  ready in xxx ms
+    ➜  Local:   http://localhost:3000/
+
+  ★★★ 注意：此命令窗口也不要关闭！★★★
+
+================================================================================
+六、启动系统
+================================================================================
+
+【6.1 打开浏览器访问系统】
+
+  在浏览器地址栏输入：http://localhost:3000
+
+【6.2 登录系统】
+
+  管理员账号：admin / admin123
+  医生账号：doctor / doctor123
+
+【6.3 知识库向量化（首次使用必须执行）】
+
+  1. 用管理员账号登录
+  2. 点击左侧菜单"知识库管理"
+  3. 对每个文档点击"向量化"按钮
+  4. 等待向量化完成（每个文档需要几秒钟）
+  5. 向量化完成后，方案生成功能才能正常检索知识库
+
+【6.4 日常使用启动顺序】
+
+  每次使用系统，需要按以下顺序启动：
+
+  第一步：启动 MySQL 服务（通常安装后会自动启动）
+  
+  第二步：启动后端
+    打开命令提示符，进入 backend 目录：
+    cd 项目路径\backend
+    .\venv\Scripts\activate
+    python run.py
+
+  第三步：启动前端
+    打开新的命令提示符，进入 frontend 目录：
+    cd 项目路径\frontend
+    npx vite
+
+  第四步：浏览器访问 http://localhost:3000
+
+================================================================================
+七、常见问题排查
+================================================================================
+
+【问题1】pip install 报错 "连接超时"
+  解决：使用国内镜像源安装：
+  pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+
+【问题2】npm install 报错 "网络错误"
+  解决：使用国内镜像源安装：
+  npm install --registry https://registry.npmmirror.com
+
+【问题3】后端启动报错 "Access denied for user 'root'"
+  解决：检查 backend/.env 文件中 DB_PASSWORD 是否正确设置为你的 MySQL 密码
+
+【问题4】后端启动报错 "Unknown database 'smart_medical'"
+  解决：先手动创建数据库：
+  mysql -u root -p
+  CREATE DATABASE smart_medical DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  exit
+
+【问题5】前端启动报错 "'vite' 不是内部或外部命令"
+  解决：在 frontend 目录下重新安装依赖：
+  npm install
+  然后使用 npx vite 启动
+
+【问题6】方案生成显示"未检索到相关知识库内容"
+  解决：需要先对知识库文档进行向量化。用管理员登录后，进入知识库管理，
+  点击每个文档的"向量化"按钮。
+
+【问题7】方案生成报错 "SSL证书验证失败"
+  解决：该问题已在系统代码中处理。如果仍然出现，检查网络连接是否正常，
+  确保能访问阿里云 API 服务。
+
+【问题8】页面打不开或显示空白
+  解决：
+  1. 确认后端服务已启动（命令窗口中有 Running on http://127.0.0.1:5000）
+  2. 确认前端服务已启动（命令窗口中有 http://localhost:3000）
+  3. 清除浏览器缓存后重试（Ctrl+Shift+Delete）
+
+================================================================================
+================================================================================

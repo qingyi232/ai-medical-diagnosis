@@ -1,0 +1,15 @@
+Flask>=3.0.0
+Flask-CORS>=4.0.0
+Flask-SQLAlchemy>=3.1.1
+Flask-Migrate>=4.0.5
+Flask-JWT-Extended>=4.6.0
+PyMySQL>=1.1.0
+cryptography>=41.0.0
+dashscope>=1.20.0
+faiss-cpu>=1.9.0
+numpy>=1.26.0
+python-dotenv>=1.0.0
+werkzeug>=3.0.1
+python-docx>=1.1.0
+PyPDF2>=3.0.1
+openpyxl>=3.1.2
